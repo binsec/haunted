@@ -68,4 +68,4 @@ $ binsec --help
 ```
 
 ## Source code
-Useful source code is located under `src/relse/`.
+Source code of Binsec/Haunted is located under `src/relse/`.
