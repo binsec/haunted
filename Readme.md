@@ -16,25 +16,26 @@ Benchmarks to test Binsec/Haunted: https://github.com/binsec/haunted_bench
 
 ## Installation
 ### Docker
-Coming soon.
-<!-- ### Docker -->
-<!-- The docker contains necessary files for running Binsec/Haunted and the benchmarks to test it. -->
+The docker contains necessary files for running Binsec/Haunted and the benchmarks to test it.
 
-<!-- 1. Download the [image](todo). -->
+1. Download the [image](https://zenodo.org/record/4442337).
 
-<!-- 2. Import the image: -->
-<!-- ``` -->
-<!-- docker load < binsec-haunted.tar -->
-<!-- ``` -->
+2. Import the image:
+```
+ docker load < binsec-haunted.tar
+```
 
-<!-- 3. Run the container: -->
-<!-- ``` -->
-<!-- docker run -it binsec-haunted /bin/bash -->
-<!-- ``` -->
+3. Run the container:
+```
+docker run -it binsec-haunted /bin/bash
+```
 
-<!-- 4. Run `./update.sh` to get the latest version of Binsec/Haunted. -->
+4. Run `./update.sh` to get the latest version of Binsec/Haunted.
 
-<!-- You are ready to go ! (Read https://github.com/binsec/haunted_bench for examples on how to use Binsec/Haunted). -->
+5. You are ready to go! Look at Readme.md or read the documentation of
+   [Binsec/haunted_bench](https://github.com/binsec/haunted_bench) for
+   examples on how to use Binsec/Haunted.
+
 
 ### From sources
 **Requirements**: boolector (recommended boolector-3.2.0), z3, yices or cvc4.
