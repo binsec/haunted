@@ -1,7 +1,7 @@
-# Binsec/Haunted: a binary-level analyzer to detect Spectre attacks.
+# Binsec/Haunted: a binary-level analyzer to detect vulnerabilities to Spectre attacks.
 Binsec/Haunted is a binary-analysis tool for speculative
 constant-time, that can find Spectre-PHT (a.k.a. Spectre-v1) and
-Spectre-STL (a.k.a. Spectre-v4) vulnerabilities.
+Spectre-STL (a.k.a. Spectre-v4) vulnerabilities in binary code.
 
 It is an extension of the binary analysis plateform
 [Binsec](https://github.com/binsec/binsec), and in particular, it
