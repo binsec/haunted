@@ -24,7 +24,7 @@ CAMLOPT		?=@OCAMLOPT@
 CAMLLEX		?=@OCAMLLEX@
 CAMLLEXOPTS	?=
 CAMLYAC		?=@MENHIR@
-CAMLYACOPTS	?=
+CAMLYACOPTS	?=--infer
 CAMLDEP		?=@OCAMLDEP@
 # Rationale for warning exclusions:
 # - 42 is only valid in OCaml < 4.00
