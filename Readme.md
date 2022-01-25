@@ -46,7 +46,7 @@ sudo apt update
 sudo apt install ocaml ocaml-native-compilers camlp4-extra opam protobuf-compiler libgmp-dev libzmq3-dev llvm-6.0-dev cmake pkg-config
 opam init
 opam switch 4.05.0
-opam install menhir ocamlgraph piqi zarith zmq.5.0.0 llvm.6.0.0 oUnit hashset containers
+opam install menhir.20211012 ocamlgraph piqi zarith zmq.5.0.0 llvm.6.0.0 oUnit hashset containers
 
 # Additional packages (optional)
 # opam install merlin ocp-indent caml-mode tuareg ocamlfind
