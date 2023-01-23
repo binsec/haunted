@@ -37,6 +37,7 @@ let instr_succ addr instr =
   | Undef _
   | Free _
   | Malloc _
+  | Serialize _
   | Print _ -> Some([Dba.JInner (addr.Dba.id + 1)]) (* no jump *)
   | DJump _ -> None (* unknown *)
   | SJump (jt, _) -> Some([jt])

@@ -897,6 +897,7 @@ module Eval = struct
       | Dba.Instr.NondetAssume _
       | Dba.Instr.Malloc _
       | Dba.Instr.Free _
+      | Dba.Instr.Serialize _
       | Dba.Instr.Print _ as dba_instruction ->
         let vaddress = Path_state.location ps in
         let msg =
