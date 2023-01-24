@@ -118,6 +118,7 @@ sig
   val get_regular_pc: t -> Formula.bl_term Relse_utils.formula_status
   val get_transient_pc: t -> Formula.bl_term Relse_utils.formula_status
   val maybe_retire: t -> t status_t
+  val fence: t -> t status_t
   val start_explicit_transient_path: retire_depth:int -> t -> t
   val start_haunted_path: retire_depth:int ->
     transient_cond:Formula.bl_term Rel_expr.t ->

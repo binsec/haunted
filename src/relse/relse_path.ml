@@ -39,27 +39,32 @@ struct
     let empty = {
       speculative_pcs = PCHeap.empty;
     }
-    
-    let maybe_retire t current_depth =
+
+    let maybe_retire t current_depth_opt =
       let pc_update cond = function
         | Some pc -> Some (Rel_expr.apply2 Formula.mk_bl_and pc cond)
         | None -> Some cond
       in
       let rec maybe_retire' speculative_pcs pc =
         match PCHeap.find_min speculative_pcs with
-        | Some { retire_depth; rel_pc } when retire_depth <= current_depth ->
-          (* Retire this conditional *)
-          let speculative_pcs, _ = PCHeap.take_exn speculative_pcs in
-          Logger.debug ~level:7 "[Spectre] Retire conditional %a (current depth %d)"
-            (Rel_expr.pp_rexpr Formula_pp.pp_bl_term) rel_pc current_depth;
-          (* Maybe retire other conditionals *)
-          maybe_retire' speculative_pcs (pc_update rel_pc pc)
-        | _ -> speculative_pcs, pc (* Nothing to retire *)
+        | Some { retire_depth; rel_pc } ->
+          (match current_depth_opt with
+          | Some current_depth when retire_depth <= current_depth ->
+            let speculative_pcs, _ = PCHeap.take_exn speculative_pcs in
+            Logger.debug ~level:7 "[Spectre] Retire condition %a (reached %d)"
+              (Rel_expr.pp_rexpr Formula_pp.pp_bl_term) rel_pc current_depth;
+           maybe_retire' speculative_pcs (pc_update rel_pc pc)
+          | Some _ -> speculative_pcs, pc (* Nothing to retire *)
+          | None ->
+            (* Maybe retire other conditions *)
+           let speculative_pcs, _ = PCHeap.take_exn speculative_pcs in
+           Logger.debug ~level:7 "[Spectre] Retire condition %a (fence)"
+             (Rel_expr.pp_rexpr Formula_pp.pp_bl_term) rel_pc;
+            maybe_retire' speculative_pcs (pc_update rel_pc pc))
+        | None -> speculative_pcs, pc (* Nothing to retire *)
       in
       let speculative_pcs, pc = maybe_retire' t.speculative_pcs None in
       { speculative_pcs }, pc
-      
-      
 
     let start_transient_path ~regular_cond ~retire_depth t =
       (* Put regular condition in the sequence of conditionals to retire *)
@@ -99,13 +104,17 @@ struct
 
     let empty = { retire_depth = None }
 
-    let maybe_retire t current_depth =
-      match t.retire_depth with
+    let maybe_retire t current_depth_opt =
+      match t.retire_depth, current_depth_opt with
       (* Max speculation depth has been reached: kill path *)
-      | Some retire_depth when retire_depth <= current_depth ->
+      | Some retire_depth, Some current_depth when retire_depth <= current_depth ->
         Logger.debug ~level:7 "[Spectre] Retire conditional (retire \
                                depth = %d) (current depth = %d)"
           retire_depth current_depth; Halt
+      | Some retire_depth, None ->
+        Logger.debug ~level:7 "[Spectre] Retire conditional (retire \
+                               depth = %d) (fence)"
+          retire_depth; Halt
       | _ -> Continue t
       
     let start_transient_path t ~retire_depth =
@@ -139,11 +148,13 @@ struct
 
     let empty = { retire_depth = None }
 
-    let maybe_retire t current_depth =
-      match t.retire_depth with
+    let maybe_retire t current_depth_opt =
+      match t.retire_depth, current_depth_opt with
       (* Max speculation depth has been reached: kill path *)
-      | Some retire_depth when retire_depth <= current_depth ->
+      | Some retire_depth, Some current_depth when retire_depth <= current_depth ->
         Logger.debug ~level:7 "[Spectre] Retire transient load value"; Halt
+      | Some _, None ->
+        Logger.debug ~level:7 "[Spectre] Retire transient load value (fence)"; Halt
       | _ -> Continue t
 
     let start_transient_load t ~retire_depth =
@@ -387,39 +398,50 @@ struct
     else ps      
 
   (* Spectre *)
-  let maybe_retire_pht ps =
+  let maybe_retire_pht ps current_depth_opt =
     match ps.spectre_pht with
     | Spectre.NoPHT -> Continue ps
     | Spectre.ExplicitPHT pht ->
-      (match Spectre.ExplicitSE.maybe_retire pht ps.depth with
+      (match Spectre.ExplicitSE.maybe_retire pht current_depth_opt with
        | Continue pht ->
          Continue { ps with spectre_pht = (Spectre.ExplicitPHT pht) }
        | Halt -> Halt)
     | Spectre.HauntedPHT pht ->
-      (match Spectre.HauntedSE.maybe_retire pht ps.depth with
+      (match Spectre.HauntedSE.maybe_retire pht current_depth_opt with
        | pht, Some rel_pc ->
          let ps = update_pc_cond rel_pc ps in
          Continue { ps with spectre_pht = (Spectre.HauntedPHT pht) }
        | pht, None ->
          Continue { ps with spectre_pht = (Spectre.HauntedPHT pht) })
 
-  let maybe_retire_stl ps = 
+  let maybe_retire_stl ps current_depth_opt =
     match ps.spectre_stl with
     | Spectre.ExplicitSTL stl ->
-      (match Spectre.ExplicitSTL.maybe_retire stl ps.depth with 
+      (match Spectre.ExplicitSTL.maybe_retire stl current_depth_opt with
        | Continue spectre_stl ->
          Continue { ps with spectre_stl = Spectre.ExplicitSTL spectre_stl }
        | Halt -> Halt)
-    | Spectre.HauntedIte | Spectre.NoSTL -> Continue ps
+    | Spectre.HauntedIte ->
+      let symbolic_state = Sym_state.fence ps.symbolic_state in
+      Continue { ps with symbolic_state }
+    | Spectre.NoSTL -> Continue ps
   
   let maybe_retire ps =
-    match maybe_retire_pht ps with
+    match maybe_retire_pht ps (Some ps.depth) with
     | Continue ps ->
-      (match maybe_retire_stl ps with
+      (match maybe_retire_stl ps (Some ps.depth) with
        | Continue ps -> Continue ps
        | Halt -> Halt)
     | Halt -> Halt
-    
+
+  let fence ps =
+    match maybe_retire_pht ps None with
+    | Continue ps ->
+      (match maybe_retire_stl ps None with
+       | Continue ps -> Continue ps
+       | Halt -> Halt)
+    | Halt -> Halt
+
     (* let transient_pht_mode ps =
      *   match ps.spectre with
      *   | Spectre.NoSpectre -> Spectre.RegularMode

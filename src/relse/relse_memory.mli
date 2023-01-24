@@ -24,3 +24,6 @@ val store : init:bool -> vaddr:Virtual_address.t -> current_depth:int -> retire_
 val select : t -> vaddr:Virtual_address.t -> current_depth:int -> size:int -> index_t -> Relse_term.TransientSet.t
 
 val add_declaration : t -> Formula.formula -> Formula.formula
+
+(** Retire all pending stores in the store buffer *)
+val fence : t -> t

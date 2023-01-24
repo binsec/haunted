@@ -891,13 +891,19 @@ module Eval = struct
                Virtual_address.pp (Dba_types.Caddress.to_virtual_address vaddress) 
            in Errors.not_yet_implemented msg)
 
+      (* Fence *)
+      | Dba.Instr.Serialize (_, idx) as dba_instruction ->
+        begin match Path_state.fence ps with
+        | Relse_path.Continue ps -> skip dba_instruction idx ps |> State.set_path state
+        | Relse_path.Halt -> check_and_kill_path state; choose_next_state ()
+        end
+
       | Dba.Instr.Stop _
       | Dba.Instr.Assume _
       | Dba.Instr.Nondet _
       | Dba.Instr.NondetAssume _
       | Dba.Instr.Malloc _
       | Dba.Instr.Free _
-      | Dba.Instr.Serialize _
       | Dba.Instr.Print _ as dba_instruction ->
         let vaddress = Path_state.location ps in
         let msg =

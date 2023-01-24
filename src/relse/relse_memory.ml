@@ -75,6 +75,7 @@ sig
     value_t -> Formula.formula -> t -> (Formula.formula * t)
   val select : vaddr:Virtual_address.t -> current_depth:int -> size:int -> index_t -> t -> Relse_term.TransientSet.t
   val decl_init_mem : t -> Formula.formula -> Formula.formula
+  val fence : t -> t
 end
 
 (* Address and intervals *)
@@ -884,6 +885,11 @@ module StoreBuffer : STBUF = struct
       retire current_depth t
     | _ -> t
 
+  let rec fence t =
+    match Sequence.peek_back t.buf with
+    | Some _ -> fence (retire_last t)
+    | _ -> t
+
   let base_equals addr addr' = equal_bv_term addr.base addr'.base
 
   type result_t =  NotFound | PartiallyFound | Skip | Aborted | Found of value_t
@@ -1169,6 +1175,16 @@ module Packer = struct
         (Rel_expr.deduplicate @@ Rel_expr.apply2 process_value r_val r_index)
     | RowMap env -> Relse_term.TransientSet.create (RowMap.select env ~size r_index)
     | SBuf env -> StoreBuffer.select ~vaddr ~current_depth ~size r_index env
+
+  let fence t =
+    match t.pack with
+      | Std _
+      | List _
+      | Map _
+      | RowMap _ -> t
+      | SBuf env ->
+        { t with pack = SBuf (StoreBuffer.fence env) }
+
 
   let add_declaration t fml =
     (* Initialize the symbolic memory *)

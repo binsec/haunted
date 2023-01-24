@@ -567,6 +567,23 @@ struct
       in
       Formula.append fml (DatedBLVarSet.fold add_var declarations Formula.empty)    
 
+  (* Set retirement depths of all loads to 0 *)
+  let fence t =
+    let transient_loads =
+    match t.transient_loads with
+    | None -> None
+    | Some decls ->
+      let decls' = DatedBLVarSet.create
+          (DatedBLVarSet.cardinal decls) in
+        (DatedBLVarSet.iter
+          (fun (_, bl_var) -> DatedBLVarSet.add decls' (0, bl_var))
+          decls;
+        Some decls')
+    in
+    (* Clear store buffer *)
+    let memory = Relse_memory.fence t.memory in
+    { t with transient_loads; memory }
+
   let substitute_transient_loads_r_bv ~current_depth t r_expr =
     match t.transient_loads with
     | None -> r_expr

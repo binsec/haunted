@@ -61,4 +61,6 @@ module State : sig
   val mark_sat : t -> t
   val mark_unsat :  t -> t
   val mark_unknown :  t -> t  
+
+  val fence : t -> t
 end
