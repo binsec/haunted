@@ -421,9 +421,11 @@ struct
        | Continue spectre_stl ->
          Continue { ps with spectre_stl = Spectre.ExplicitSTL spectre_stl }
        | Halt -> Halt)
-    | Spectre.HauntedIte ->
+    | Spectre.HauntedIte when current_depth_opt = None ->
       let symbolic_state = Sym_state.fence ps.symbolic_state in
       Continue { ps with symbolic_state }
+    | Spectre.HauntedIte ->
+      Continue ps
     | Spectre.NoSTL -> Continue ps
   
   let maybe_retire ps =
@@ -441,12 +443,6 @@ struct
        | Continue ps -> Continue ps
        | Halt -> Halt)
     | Halt -> Halt
-
-    (* let transient_pht_mode ps =
-     *   match ps.spectre with
-     *   | Spectre.NoSpectre -> Spectre.RegularMode
-     *   | Spectre.Explicit spectre -> Spectre.ExplicitSE.speculative_mode spectre
-     *   | Spectre.Haunted spectre -> Spectre.HauntedSE.speculative_mode spectre *)
 
   let speculative_mode ps =
     match ps.spectre_stl with
